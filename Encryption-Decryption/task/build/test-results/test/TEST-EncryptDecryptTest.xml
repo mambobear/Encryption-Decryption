@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="EncryptDecryptTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2021-03-04T01:03:38" hostname="Andreis-iMac.local" time="0.068">
+  <properties/>
+  <testcase name="start" classname="EncryptDecryptTest" time="0.068"/>
+  <system-out><![CDATA[?[1;31m
+Start test 1?[0m
+dv ulfmw z givzhfiv!
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
