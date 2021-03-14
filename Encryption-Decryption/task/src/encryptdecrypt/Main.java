@@ -10,6 +10,7 @@ import java.util.Map;
 
 public class Main {
 
+    static final String ALGORITHM = "-alg";
     static final String MODE = "-mode";
     static String KEY = "-key";
     static final String DATA = "-data";
@@ -21,6 +22,9 @@ public class Main {
 
         HashMap<String, String> params = new HashMap<>();
 
+        Encryptor encryptor = new Encryptor();
+
+        params.put(ALGORITHM, "shift");
         params.put(MODE, "enc");
         params.put(KEY, "0");
         params.put(DATA, null);
@@ -60,13 +64,28 @@ public class Main {
             return;
         }
 
-        String result;
         String mode = params.get(MODE);
         if ("dec".equals(mode)) {
             key = -key;
         }
 
-        result = encryptCaesar(params.get(DATA), key);
+        Encrypt encrypt = null;
+        switch (params.get(ALGORITHM)) {
+            case "shift":
+                encrypt = new ShiftEncrypt();
+                break;
+            case "unicode":
+                encrypt = new UnicodeEncrypt();
+                break;
+            default:
+                encryptor.setAlgorithm(null);
+        }
+        encryptor.setAlgorithm(encrypt);
+        String result = encryptor.encrypt(params.get(DATA), key);
+        write(result, params);
+    }
+
+    private static void write(String result, HashMap<String, String> params) {
         String outFileName = params.get(OUT);
         if (outFileName == null) {
             System.out.println(result);
@@ -80,13 +99,14 @@ public class Main {
         }
     }
 
+
     static void parseArguments(HashMap<String, String> params, String[] args) {
         int idx = 0;
         while (idx < args.length) {
             String name = args[idx];
             if (params.containsKey(name)) {
                 idx++;
-                if ( idx < args.length) {
+                if (idx < args.length) {
                     if (params.containsKey(args[idx])) {
                         params.put(ERROR, String.format("Error: Invalid argument string, missing value for %s", name));
                         break;
@@ -97,7 +117,7 @@ public class Main {
                     params.put(ERROR, String.format("Error: Invalid argument string, missing value for %s", name));
                     break;
                 }
-            } else  {
+            } else {
                 params.put(ERROR, "Error: Invalid argument string");
                 break;
             }
@@ -111,19 +131,66 @@ public class Main {
             System.out.printf("[%s, %s]\n", key, value);
         }
     }
+}
 
-    private static String encryptCaesar(String message, int key) {
-        int SIZE = 256;
+interface Encrypt {
+    StringBuilder strb = new StringBuilder();
+    String encrypt(String message, int key);
+}
 
-        StringBuilder strb = new StringBuilder();
+class ShiftEncrypt implements Encrypt {
+    @Override
+    public String encrypt(String message, int key) {
+        int SIZE = 26;
 
-        key %= SIZE;
+        if (key < 0) {
+            key += SIZE;
+        }
+        if (key >= SIZE) {
+            key %= SIZE;
+        }
+
         char ch;
         for (int i = 0; i < message.length(); i++) {
-            ch =  message.charAt(i);
-            ch =  (char) ( 'a' + (ch - 'a' + key) % SIZE );
+            ch = message.charAt(i);
+            if ('a' <= ch && ch <= 'z') {
+                ch = (char) ('a' + (ch - 'a' + key) % SIZE);
+            } else if ('A' <= ch && ch <= 'Z') {
+                ch = (char) ('A' + (ch - 'A' + key) % SIZE);
+            }
             strb.append(ch);
         }
         return strb.toString();
+    }
+}
+
+class UnicodeEncrypt implements Encrypt {
+
+    @Override
+    public String encrypt(String message, int key) {
+        int SIZE = 256;
+        key %= SIZE;
+        char ch;
+        for (int i = 0; i < message.length(); i++) {
+            ch = message.charAt(i);
+            ch = (char) ('a' + (ch - 'a' + key) % SIZE);
+            strb.append(ch);
+        }
+        return strb.toString();
+    }
+}
+
+class Encryptor {
+    Encrypt algorithm;
+
+    public void setAlgorithm(Encrypt algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public String encrypt(String message, int key) {
+        if (algorithm != null) {
+            return algorithm.encrypt(message, key);
+        }
+        return "Encryptor: Error, no algorithm set";
     }
 }
